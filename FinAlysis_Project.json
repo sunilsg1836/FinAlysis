@@ -1,0 +1,223 @@
+{
+  "name": "FinAlysis Project",
+  "nodes": [
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1PG9jWnP2MohPUqpWtkCeW0dzEY1VjWecMMHxfGJ-7bM/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1PG9jWnP2MohPUqpWtkCeW0dzEY1VjWecMMHxfGJ-7bM/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        -40,
+        80
+      ],
+      "id": "6669fcd4-e0b3-4d5d-8917-1322c6aeb2d5",
+      "name": "Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "hLilJqriJrrUelNE",
+          "name": "Google Sheets account 46"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -340,
+        80
+      ],
+      "id": "5e645f40-6b78-4a32-b28e-e84c94768c0f",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const row = item.json;\n\n  const currentRatio = row.currentAssets / row.currentLiabilities;\n  const debtEquity = row.totalLiabilities / row.equity;\n  const netProfitMargin = (row.netProfit / row.revenue) * 100;\n\n  return {\n    json: {\n      company: row.companyName,\n      currentRatio: currentRatio.toFixed(2),\n      debtEquity: debtEquity.toFixed(2),\n      netProfitMargin: netProfitMargin.toFixed(2) + '%',\n      email: row.email\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        180,
+        80
+      ],
+      "id": "388b2e01-e7e9-4427-bde2-c8deeb2ff0cf",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a financial advisor. Here are the financial ratios of a company:\n\n- Current Ratio: {{ $json.currentRatio }}\n- Debt to Equity Ratio:{{ $json.debtEquity }}\n- Net Profit Margin: {{ $json.netProfitMargin }}\n\nGive a short 4-line business analysis of the company’s financial health. Mention any red flags or positives.\n",
+        "hasOutputParser": true,
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        360,
+        40
+      ],
+      "id": "e71470ce-97d9-4ca5-9e32-eaed9be90237",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-1.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        460,
+        340
+      ],
+      "id": "a717ee7b-1722-456b-9d1a-3ad67df84ea8",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "8XG5fj9XP7ViSOUV",
+          "name": "Google Gemini(PaLM) Api account 11"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4e2b240e-7998-4c43-91c6-21d4917526e4",
+              "name": "text",
+              "value": "={{ $json.text }}\n",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        700,
+        80
+      ],
+      "id": "5db1e7cd-36c2-47c5-ad4b-99a0614e7f6a",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "sendTo": "sunilsg1836@gmail.com",
+        "subject": "Financial Health Report",
+        "emailType": "text",
+        "message": "={{ $json.text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        920,
+        80
+      ],
+      "id": "8bca98cf-7862-4e7f-9e92-4a259680f496",
+      "name": "Gmail",
+      "webhookId": "37ac6888-56ff-4daf-bc24-ecf3b8d14dcf",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "KyOyXAckKq6Iamgr",
+          "name": "Gmail account 13"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "efa2db96-ef02-4939-8426-73a5c8aa50eb",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3b096cd13b198103200bd48042dccc00eff159c784ae1b46d0acf0c53a683793"
+  },
+  "id": "pOwvFTJ0GVNjoYhX",
+  "tags": []
+}
